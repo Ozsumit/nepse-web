@@ -6,11 +6,9 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Switch } from '@/components/ui/Switch';
 import { Label } from '@/components/ui/Label';
-import { useAuth } from '@/context/AuthContext';
 import { useNotifications } from '@/context/NotificationContext';
 
 export default function NotificationsPage() {
-  const { token } = useAuth();
   const { settings, isLoading: settingsLoading, updateSettings } = useNotifications();
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);

@@ -19,7 +19,7 @@ export function middleware(request: NextRequest) {
   // Check for auth token
   const token = request.cookies.get('auth_token')?.value;
   
-  if (!token && pathname.startsWith('/dashboard')) {
+  if (!token && (pathname.startsWith('/dashboard') || pathname.startsWith('/admin'))) {
     const loginUrl = new URL('/login', request.url);
     loginUrl.searchParams.set('redirect', pathname);
     return NextResponse.redirect(loginUrl);

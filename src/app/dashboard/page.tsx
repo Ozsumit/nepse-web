@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
-import { formatPrice, formatNumber } from '@/lib/utils';
+import { formatPrice } from '@/lib/utils';
 import { api } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 import type { PortfolioResponse } from '@/types/api';
