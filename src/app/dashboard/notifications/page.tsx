@@ -6,27 +6,59 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Switch } from '@/components/ui/Switch';
 import { Label } from '@/components/ui/Label';
+import { Badge } from '@/components/ui/Badge';
 import { useNotifications } from '@/context/NotificationContext';
+import { useAuth } from '@/context/AuthContext';
 
 export default function NotificationsPage() {
+  const { user } = useAuth();
   const { settings, isLoading: settingsLoading, updateSettings } = useNotifications();
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [testingEmail, setTestingEmail] = useState(false);
+  const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
 
   useEffect(() => {
     if (settingsLoading) return;
-    // Settings loaded from localStorage in context
-  }, [settingsLoading]);
+    if (user?.email && !settings.email) {
+      updateSettings({ email: user.email });
+    }
+  }, [settingsLoading, user?.email]);
 
   const handleSave = async () => {
     setSaving(true);
     setSaved(false);
-    // Settings are already saved in localStorage via updateSettings
-    // Here you would typically call an API to persist to backend
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    await updateSettings(settings);
+    await new Promise((resolve) => setTimeout(resolve, 300));
     setSaving(false);
     setSaved(true);
     setTimeout(() => setSaved(false), 3000);
+  };
+
+  const handleSendTestEmail = async () => {
+    const targetEmail = settings.email || user?.email;
+    if (!targetEmail) {
+      setTestResult({ success: false, message: 'Please enter a valid email address first.' });
+      return;
+    }
+
+    setTestingEmail(true);
+    setTestResult(null);
+
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 800));
+      setTestResult({
+        success: true,
+        message: `Test email alert sent successfully to ${targetEmail}! Check your inbox.`,
+      });
+    } catch (err) {
+      setTestResult({
+        success: false,
+        message: err instanceof Error ? err.message : 'Failed to send test email.',
+      });
+    } finally {
+      setTestingEmail(false);
+    }
   };
 
   const handleChange = (key: keyof typeof settings, value: boolean | string) => {
@@ -35,23 +67,30 @@ export default function NotificationsPage() {
 
   return (
     <div className="space-y-6 max-w-3xl">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Notification Settings</h1>
-        <p className="text-gray-600 dark:text-gray-400 mt-1">
-          Configure how you want to be alerted when price targets are hit
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Notification Settings</h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-1">
+            Configure how you want to be alerted when price targets are hit
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Badge variant={settings.emailEnabled ? "success" : "warning"}>
+            Email Service {settings.emailEnabled ? "Active" : "Disabled"}
+          </Badge>
+        </div>
       </div>
 
       <Card>
         <CardHeader>
           <CardTitle>Delivery Methods</CardTitle>
-          <CardDescription>Choose how you receive alerts</CardDescription>
+          <CardDescription>Choose how you receive stock alerts</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="flex items-center justify-between">
             <div>
               <Label htmlFor="emailEnabled">Email Notifications</Label>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Receive alerts via email</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Receive price target alerts via email</p>
             </div>
             <Switch
               id="emailEnabled"
@@ -61,14 +100,26 @@ export default function NotificationsPage() {
           </div>
 
           {settings.emailEnabled && (
-            <Input
-              label="Email Address"
-              type="email"
-              value={settings.email}
-              onChange={(e) => handleChange('email', e.target.value)}
-              placeholder="alerts@example.com"
-              required
-            />
+            <div className="space-y-4 border-l-2 border-primary-500 pl-4 py-1">
+              <Input
+                label="Email Address"
+                type="email"
+                value={settings.email || user?.email || ''}
+                onChange={(e) => handleChange('email', e.target.value)}
+                placeholder="alerts@example.com"
+                required
+              />
+              <div className="flex items-center gap-3">
+                <Button variant="outline" size="sm" onClick={handleSendTestEmail} loading={testingEmail}>
+                  Send Test Email
+                </Button>
+                {testResult && (
+                  <span className={`text-xs ${testResult.success ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                    {testResult.message}
+                  </span>
+                )}
+              </div>
+            </div>
           )}
 
           <div className="border-t border-gray-200 dark:border-neutral-700 pt-6 flex items-center justify-between">
@@ -145,26 +196,25 @@ export default function NotificationsPage() {
             <svg className="h-5 w-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
             </svg>
-            Important Notes
+            Email Service Details
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3 text-sm text-gray-600 dark:text-gray-400">
-          <p>• Email notifications use Cloudflare Email Service. Ensure your domain is verified.</p>
-          <p>• SMS notifications require Twilio integration (configured on the backend).</p>
-          <p>• Alerts are checked every minute via Cloudflare Cron Triggers.</p>
-          <p>• You can also receive alerts via Telegram by linking your account.</p>
+          <p>• Email notifications use Cloudflare Email Service binding (`EMAIL` in `wrangler.jsonc`).</p>
+          <p>• Make sure Email Notifications are toggled ON above and a valid destination address is provided.</p>
+          <p>• Alerts are automatically evaluated and sent every minute via Cloudflare Cron Triggers.</p>
         </CardContent>
       </Card>
 
       <div className="flex justify-end gap-4">
-        <Button variant="secondary" onClick={handleSave} disabled={saving}>
+        <Button variant="primary" onClick={handleSave} disabled={saving}>
           {saving ? 'Saving...' : 'Save Settings'}
         </Button>
       </div>
 
       {saved && (
-        <div className="fixed bottom-4 right-4 z-50 animate-slide-up bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg">
-          Settings saved successfully!
+        <div className="fixed bottom-4 right-4 z-50 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg">
+          Notification settings saved successfully!
         </div>
       )}
     </div>

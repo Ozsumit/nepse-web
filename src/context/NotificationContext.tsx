@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import type { NotificationSettings } from '@/types/api';
+import { useAuth } from '@/context/AuthContext';
 
 const DEFAULT_SETTINGS: NotificationSettings = {
   emailEnabled: true,
@@ -22,20 +23,26 @@ interface NotificationContextType {
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
 
 export function NotificationProvider({ children }: { children: ReactNode }) {
+  const { user } = useAuth();
   const [settings, setSettings] = useState<NotificationSettings>(DEFAULT_SETTINGS);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const stored = localStorage.getItem('notification_settings');
+    let loadedSettings = DEFAULT_SETTINGS;
     if (stored) {
       try {
-        setSettings(JSON.parse(stored));
+        loadedSettings = { ...DEFAULT_SETTINGS, ...JSON.parse(stored) };
       } catch {
         // ignore parse errors
       }
     }
+    if (user?.email && !loadedSettings.email) {
+      loadedSettings.email = user.email;
+    }
+    setSettings(loadedSettings);
     setIsLoading(false);
-  }, []);
+  }, [user?.email]);
 
   const updateSettings = async (newSettings: Partial<NotificationSettings>) => {
     setSettings((prev) => {
