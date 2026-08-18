@@ -1,6 +1,6 @@
-import { NextResponse } from 'next/server';
-import { Resend } from 'resend';
-import nodemailer from 'nodemailer';
+import { NextResponse } from "next/server";
+import { Resend } from "resend";
+import nodemailer from "nodemailer";
 
 export async function POST(request: Request) {
   try {
@@ -10,11 +10,12 @@ export async function POST(request: Request) {
     if (!to) {
       return NextResponse.json(
         { ok: false, error: 'Recipient email ("to") is required.' },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
-    const emailSubject = subject || 'NEPSE Portfolio Tracker - Price Alert Notification';
+    const emailSubject =
+      subject || "NEPSE Portfolio Tracker - Price Alert Notification";
     const emailHtml =
       html ||
       `<div style="font-family: sans-serif; padding: 20px; border: 1px solid #e5e7eb; rounded: 8px;">
@@ -25,14 +26,16 @@ export async function POST(request: Request) {
           <p style="margin: 4px 0 0 0; font-size: 14px; color: #4b5563;">Status: Active & Verified</p>
         </div>
       </div>`;
-    const emailText = text || `NEPSE Tracker Notification: Email service is working properly for ${to}!`;
+    const emailText =
+      text ||
+      `NEPSE Tracker Notification: Email service is working properly for ${to}!`;
 
     // 1. Check for Resend API Key
     const resendApiKey = process.env.RESEND_API_KEY;
     if (resendApiKey) {
       const resend = new Resend(resendApiKey);
       const data = await resend.emails.send({
-        from: process.env.EMAIL_FROM || 'NEPSE Tracker <onboarding@resend.dev>',
+        from: process.env.EMAIL_FROM || "NEPSE Tracker <nepse@sumit.info.np>",
         to: [to],
         subject: emailSubject,
         html: emailHtml,
@@ -41,7 +44,7 @@ export async function POST(request: Request) {
 
       return NextResponse.json({
         ok: true,
-        provider: 'Resend',
+        provider: "Resend",
         data,
         message: `Email sent successfully via Resend to ${to}`,
       });
@@ -56,7 +59,7 @@ export async function POST(request: Request) {
       const transporter = nodemailer.createTransport({
         host: smtpHost,
         port: Number(process.env.SMTP_PORT) || 587,
-        secure: Boolean(process.env.SMTP_SECURE === 'true'),
+        secure: Boolean(process.env.SMTP_SECURE === "true"),
         auth: {
           user: smtpUser,
           pass: smtpPass,
@@ -73,7 +76,7 @@ export async function POST(request: Request) {
 
       return NextResponse.json({
         ok: true,
-        provider: 'Nodemailer (SMTP)',
+        provider: "Nodemailer (SMTP)",
         messageId: info.messageId,
         message: `Email sent successfully via SMTP to ${to}`,
       });
@@ -82,7 +85,7 @@ export async function POST(request: Request) {
     // 3. Fallback: Ethereal Test Transporter (Nodemailer test service)
     const testAccount = await nodemailer.createTestAccount();
     const testTransporter = nodemailer.createTransport({
-      host: 'smtp.ethereal.email',
+      host: "smtp.ethereal.email",
       port: 587,
       secure: false,
       auth: {
@@ -92,7 +95,7 @@ export async function POST(request: Request) {
     });
 
     const info = await testTransporter.sendMail({
-      from: 'NEPSE Tracker <alerts@nepsetracker.com>',
+      from: "NEPSE Tracker <alerts@nepsetracker.com>",
       to,
       subject: emailSubject,
       html: emailHtml,
@@ -103,12 +106,12 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       ok: true,
-      provider: 'Nodemailer (Ethereal SMTP)',
+      provider: "Nodemailer (Ethereal SMTP)",
       previewUrl,
-      message: `Test email sent to ${to}.${previewUrl ? ` View test email online: ${previewUrl}` : ''}`,
+      message: `Test email sent to ${to}.${previewUrl ? ` View test email online: ${previewUrl}` : ""}`,
     });
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'Failed to send email';
+    const message = err instanceof Error ? err.message : "Failed to send email";
     return NextResponse.json({ ok: false, error: message }, { status: 500 });
   }
 }
