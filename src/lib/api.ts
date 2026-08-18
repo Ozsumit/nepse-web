@@ -174,6 +174,24 @@ class ApiClient {
     return this.request<HealthResponse>("/api/health");
   }
 
+  async sendEmail(data: {
+    to: string;
+    subject?: string;
+    html?: string;
+    text?: string;
+  }): Promise<{ ok: boolean; provider: string; message: string; previewUrl?: string }> {
+    const res = await fetch("/api/email/send", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+    const result = await res.json().catch(() => ({}));
+    if (!res.ok || !result.ok) {
+      throw new Error(result.error || "Failed to send email");
+    }
+    return result;
+  }
+
   // Admin User Management
   async getUsers(): Promise<User[]> {
     return this.getStoredUsers();

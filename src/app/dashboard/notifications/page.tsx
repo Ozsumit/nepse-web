@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/Label';
 import { Badge } from '@/components/ui/Badge';
 import { useNotifications } from '@/context/NotificationContext';
 import { useAuth } from '@/context/AuthContext';
+import { api } from '@/lib/api';
 
 export default function NotificationsPage() {
   const { user } = useAuth();
@@ -16,7 +17,7 @@ export default function NotificationsPage() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [testingEmail, setTestingEmail] = useState(false);
-  const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [testResult, setTestResult] = useState<{ success: boolean; message: string; previewUrl?: string } | null>(null);
 
   useEffect(() => {
     if (settingsLoading) return;
@@ -46,10 +47,15 @@ export default function NotificationsPage() {
     setTestResult(null);
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 800));
+      const res = await api.sendEmail({
+        to: targetEmail,
+        subject: 'NEPSE Portfolio Tracker - Price Alert Notification Test',
+      });
+
       setTestResult({
         success: true,
-        message: `Test email alert sent successfully to ${targetEmail}! Check your inbox.`,
+        message: res.message,
+        previewUrl: res.previewUrl,
       });
     } catch (err) {
       setTestResult({
@@ -90,7 +96,7 @@ export default function NotificationsPage() {
           <div className="flex items-center justify-between">
             <div>
               <Label htmlFor="emailEnabled">Email Notifications</Label>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Receive price target alerts via email</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Receive price target alerts via Resend / SMTP email service</p>
             </div>
             <Switch
               id="emailEnabled"
@@ -109,14 +115,26 @@ export default function NotificationsPage() {
                 placeholder="alerts@example.com"
                 required
               />
-              <div className="flex items-center gap-3">
-                <Button variant="outline" size="sm" onClick={handleSendTestEmail} loading={testingEmail}>
-                  Send Test Email
-                </Button>
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center gap-3">
+                  <Button variant="outline" size="sm" onClick={handleSendTestEmail} loading={testingEmail}>
+                    Send Test Email
+                  </Button>
+                </div>
                 {testResult && (
-                  <span className={`text-xs ${testResult.success ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                    {testResult.message}
-                  </span>
+                  <div className={`p-3 rounded-lg text-xs border ${testResult.success ? 'bg-green-50 border-green-200 text-green-800 dark:bg-green-900/20 dark:border-green-800 dark:text-green-300' : 'bg-red-50 border-red-200 text-red-800 dark:bg-red-900/20 dark:border-red-800 dark:text-red-300'}`}>
+                    <p>{testResult.message}</p>
+                    {testResult.previewUrl && (
+                      <a
+                        href={testResult.previewUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="underline text-primary-600 dark:text-primary-400 font-medium block mt-1"
+                      >
+                        Click here to view generated test email online
+                      </a>
+                    )}
+                  </div>
                 )}
               </div>
             </div>
@@ -196,13 +214,13 @@ export default function NotificationsPage() {
             <svg className="h-5 w-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
             </svg>
-            Email Service Details
+            Email Provider Setup Instructions
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3 text-sm text-gray-600 dark:text-gray-400">
-          <p>• Email notifications use Cloudflare Email Service binding (`EMAIL` in `wrangler.jsonc`).</p>
-          <p>• Make sure Email Notifications are toggled ON above and a valid destination address is provided.</p>
-          <p>• Alerts are automatically evaluated and sent every minute via Cloudflare Cron Triggers.</p>
+          <p>• <strong>Resend:</strong> Set <code>RESEND_API_KEY</code> in environment variables / <code>.dev.vars</code>.</p>
+          <p>• <strong>SMTP (Nodemailer):</strong> Set <code>SMTP_HOST</code>, <code>SMTP_USER</code>, and <code>SMTP_PASS</code>.</p>
+          <p>• <strong>Default / Fallback:</strong> Uses Nodemailer test transporter so you can preview sent emails live!</p>
         </CardContent>
       </Card>
 
