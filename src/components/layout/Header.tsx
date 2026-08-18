@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/Button';
-import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/Badge';
 
 export function Header() {
   const { user, logout } = useAuth();
@@ -31,6 +31,14 @@ export function Header() {
               <Link href="/dashboard/notifications" className="text-sm font-medium text-gray-700 hover:text-primary-600 dark:text-gray-300 dark:hover:text-primary-400">
                 Notifications
               </Link>
+              {user.isAdmin && (
+                <Link href="/dashboard/admin" className="text-sm font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400 flex items-center gap-1">
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                  </svg>
+                  Admin Panel
+                </Link>
+              )}
             </nav>
           )}
         </div>
@@ -38,7 +46,10 @@ export function Header() {
         <div className="flex items-center gap-4">
           {user ? (
             <>
-              <span className="hidden sm:block text-sm text-gray-500 dark:text-gray-400">{user.email}</span>
+              <div className="hidden sm:flex items-center gap-2">
+                <span className="text-sm text-gray-500 dark:text-gray-400">{user.email}</span>
+                {user.isAdmin && <Badge variant="warning" className="text-[10px]">Admin</Badge>}
+              </div>
               <Button variant="ghost" size="sm" onClick={logout}>
                 Logout
               </Button>

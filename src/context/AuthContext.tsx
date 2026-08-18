@@ -7,20 +7,29 @@ import {
   useState,
   ReactNode,
 } from "react";
-import type { User, AuthResponse } from "@/types/api";
+import type { User } from "@/types/api";
 import { api } from "@/lib/api";
 
 interface AuthContextType {
   user: User | null;
   token: string | null;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  signup: (email: string, password: string) => Promise<void>;
+  login: (_email: string, _password: string) => Promise<void>;
+  signup: (_email: string, _password: string) => Promise<void>;
   logout: () => void;
   refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+const setAuthCookie = (token: string | null) => {
+  if (typeof document === "undefined") return;
+  if (token) {
+    document.cookie = `auth_token=${token}; path=/; max-age=2592000; SameSite=Lax`;
+  } else {
+    document.cookie = "auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+  }
+};
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -32,6 +41,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (storedToken) {
       setToken(storedToken);
       api.setToken(storedToken);
+      setAuthCookie(storedToken);
       refreshUser();
     } else {
       setIsLoading(false);
@@ -58,6 +68,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(data.user);
     localStorage.setItem("auth_token", data.token);
     api.setToken(data.token);
+    setAuthCookie(data.token);
   };
 
   const signup = async (email: string, password: string) => {
@@ -66,6 +77,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(data.user);
     localStorage.setItem("auth_token", data.token);
     api.setToken(data.token);
+    setAuthCookie(data.token);
   };
 
   const logout = () => {
@@ -73,6 +85,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setToken(null);
     localStorage.removeItem("auth_token");
     api.setToken(null);
+    setAuthCookie(null);
   };
 
   return (

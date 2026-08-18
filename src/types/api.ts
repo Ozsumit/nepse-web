@@ -4,6 +4,21 @@ export interface User {
   telegramLinked: boolean;
   pushDeviceCount: number;
   createdAt: number;
+  isAdmin?: boolean;
+  status?: 'active' | 'suspended';
+}
+
+export interface CreateUserRequest {
+  email: string;
+  password?: string;
+  isAdmin?: boolean;
+}
+
+export interface UpdateUserRequest {
+  email?: string;
+  isAdmin?: boolean;
+  status?: 'active' | 'suspended';
+  telegramLinked?: boolean;
 }
 
 export interface AuthResponse {

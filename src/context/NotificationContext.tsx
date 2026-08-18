@@ -16,7 +16,7 @@ const DEFAULT_SETTINGS: NotificationSettings = {
 interface NotificationContextType {
   settings: NotificationSettings;
   isLoading: boolean;
-  updateSettings: (settings: Partial<NotificationSettings>) => Promise<void>;
+  updateSettings: (_settings: Partial<NotificationSettings>) => Promise<void>;
 }
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
@@ -38,9 +38,11 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const updateSettings = async (newSettings: Partial<NotificationSettings>) => {
-    const updated = { ...settings, ...newSettings };
-    setSettings(updated);
-    localStorage.setItem('notification_settings', JSON.stringify(updated));
+    setSettings((prev) => {
+      const updated = { ...prev, ...newSettings };
+      localStorage.setItem('notification_settings', JSON.stringify(updated));
+      return updated;
+    });
   };
 
   return (
