@@ -5,12 +5,23 @@ import nodemailer from "nodemailer";
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { to, subject, html, text } = body;
+    const { to, subject, html, text, userAuthenticated } = body;
 
     if (!to) {
       return NextResponse.json(
         { ok: false, error: 'Recipient email ("to") is required.' },
         { status: 400 },
+      );
+    }
+
+    if (userAuthenticated === false) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error:
+            "Mail service unavailable. Your account must be authenticated by an admin to receive emails.",
+        },
+        { status: 403 },
       );
     }
 

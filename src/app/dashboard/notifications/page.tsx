@@ -43,6 +43,14 @@ export default function NotificationsPage() {
       return;
     }
 
+    if (user?.authenticated === false && !user?.isAdmin) {
+      setTestResult({
+        success: false,
+        message: 'Mail service unavailable. Your account must be authenticated by an admin to receive emails.',
+      });
+      return;
+    }
+
     setTestingEmail(true);
     setTestResult(null);
 
@@ -50,6 +58,7 @@ export default function NotificationsPage() {
       const res = await api.sendEmail({
         to: targetEmail,
         subject: 'NEPSE Portfolio Tracker - Price Alert Notification Test',
+        userAuthenticated: user?.authenticated,
       });
 
       setTestResult({

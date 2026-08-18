@@ -1,6 +1,7 @@
 export interface User {
   id: string;
   email: string;
+  authenticated?: boolean;
   telegramLinked: boolean;
   pushDeviceCount: number;
   createdAt: number;
@@ -12,6 +13,7 @@ export interface CreateUserRequest {
   email: string;
   password?: string;
   isAdmin?: boolean;
+  authenticated?: boolean;
 }
 
 export interface UpdateUserRequest {
@@ -19,6 +21,7 @@ export interface UpdateUserRequest {
   isAdmin?: boolean;
   status?: 'active' | 'suspended';
   telegramLinked?: boolean;
+  authenticated?: boolean;
 }
 
 export interface AuthResponse {
