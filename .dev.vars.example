@@ -1,0 +1,18 @@
+# Local development environment variables
+# Copy this file to .dev.vars and fill in your values
+
+# API URL (your Workers API)
+NEXT_PUBLIC_API_URL=https://nepse-unified-api.pokhrelsumit36.workers.dev
+
+# Cloudflare Email Service (for sending emails)
+# EMAIL_FROM=alerts@yourdomain.com
+# EMAIL_API_TOKEN=your-email-api-token
+
+# Twilio (for SMS)
+# TWILIO_ACCOUNT_SID=your-account-sid
+# TWILIO_AUTH_TOKEN=your-auth-token
+# TWILIO_FROM_NUMBER=+1234567890
+# .dev.vars (Workers project root)
+JWT_SECRET=a3f8e9c2b1d4f5e6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0
+TELEGRAM_BOT_TOKEN=8363441637:AAGhZiHjiH7OM6TkFnpsEDYW47yC5pKoKqA
+ALLOWED_ORIGINS=http://localhost:3000
