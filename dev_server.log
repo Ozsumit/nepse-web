@@ -1,0 +1,35 @@
+
+> nepse-portfolio-tracker@1.0.0 dev
+> next dev
+
+   ▲ Next.js 15.5.23
+   - Local:        http://localhost:3000
+   - Network:      http://192.168.0.2:3000
+   - Experiments (use with caution):
+     · optimizePackageImports
+
+ ✓ Starting...
+ ✓ Ready in 2.1s
+ ○ Compiling /middleware ...
+ ✓ Compiled /middleware in 866ms (115 modules)
+ ○ Compiling / ...
+ ✓ Compiled / in 7.3s (631 modules)
+ HEAD / 200 in 8448ms
+ ✓ Compiled in 1344ms (250 modules)
+ ○ Compiling /signup ...
+ ✓ Compiled /signup in 1108ms (620 modules)
+ GET /signup 200 in 2690ms
+ ✓ Compiled /dashboard in 492ms (633 modules)
+ GET /dashboard 200 in 990ms
+ ✓ Compiled /login in 500ms (640 modules)
+ GET /login 200 in 802ms
+ ✓ Compiled /dashboard/admin in 442ms (647 modules)
+ GET /dashboard/admin 200 in 649ms
+ GET /signup 200 in 119ms
+ GET /signup 200 in 114ms
+ GET /signup 200 in 91ms
+ GET /dashboard 200 in 164ms
+ GET /login 200 in 128ms
+ GET /login?redirect=%2Fdashboard%2Fadmin 200 in 109ms
+ GET /signup 200 in 93ms
+ GET /dashboard 200 in 96ms

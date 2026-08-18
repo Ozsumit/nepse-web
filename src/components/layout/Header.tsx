@@ -49,6 +49,9 @@ export function Header() {
               <div className="hidden sm:flex items-center gap-2">
                 <span className="text-sm text-gray-500 dark:text-gray-400">{user.email}</span>
                 {user.isAdmin && <Badge variant="warning" className="text-[10px]">Admin</Badge>}
+                {user.authenticated === false && !user.isAdmin && (
+                  <Badge variant="warning" className="text-[10px]">Pending Auth</Badge>
+                )}
               </div>
               <Button variant="ghost" size="sm" onClick={logout}>
                 Logout
