@@ -84,6 +84,17 @@ export default function AdminPage() {
     }
   };
 
+  const handleToggleAuthenticated = async (targetUser: User) => {
+    try {
+      await api.updateUser(targetUser.id, {
+        authenticated: !targetUser.authenticated,
+      });
+      await fetchUsers();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to update authentication status');
+    }
+  };
+
   const handleToggleStatus = async (targetUser: User) => {
     try {
       const newStatus = targetUser.status === 'suspended' ? 'active' : 'suspended';
@@ -292,6 +303,7 @@ export default function AdminPage() {
                   <tr className="border-b border-gray-200 dark:border-neutral-700">
                     <th className="text-left p-3 font-medium text-gray-500 dark:text-gray-400">User Email</th>
                     <th className="text-left p-3 font-medium text-gray-500 dark:text-gray-400">Role</th>
+                    <th className="text-left p-3 font-medium text-gray-500 dark:text-gray-400">Authenticated</th>
                     <th className="text-left p-3 font-medium text-gray-500 dark:text-gray-400">Status</th>
                     <th className="text-left p-3 font-medium text-gray-500 dark:text-gray-400">Telegram</th>
                     <th className="text-left p-3 font-medium text-gray-500 dark:text-gray-400">Created At</th>
@@ -318,6 +330,13 @@ export default function AdminPage() {
                         )}
                       </td>
                       <td className="p-3">
+                        {u.authenticated ? (
+                          <Badge variant="success">AUTHENTICATED</Badge>
+                        ) : (
+                          <Badge variant="warning">PENDING</Badge>
+                        )}
+                      </td>
+                      <td className="p-3">
                         {u.status === 'suspended' ? (
                           <Badge variant="danger">SUSPENDED</Badge>
                         ) : (
@@ -336,6 +355,16 @@ export default function AdminPage() {
                       </td>
                       <td className="p-3 text-right">
                         <div className="flex items-center justify-end gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleToggleAuthenticated(u)}
+                            disabled={u.id === user.id}
+                            className={u.authenticated ? 'text-yellow-600' : 'text-green-600 font-semibold'}
+                            title={u.authenticated ? 'Revoke authentication' : 'Authenticate user so they can receive emails and access full services'}
+                          >
+                            {u.authenticated ? 'Unauthenticate' : 'Authenticate'}
+                          </Button>
                           <Button
                             variant="ghost"
                             size="sm"

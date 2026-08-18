@@ -16,6 +16,7 @@ const INITIAL_USERS: User[] = [
   {
     id: "admin-user-001",
     email: "admin@nepse.com",
+    authenticated: true,
     telegramLinked: true,
     pushDeviceCount: 1,
     createdAt: Date.now() - 86400000 * 30,
@@ -25,6 +26,7 @@ const INITIAL_USERS: User[] = [
   {
     id: "demo-user-002",
     email: "investor@nepse.com",
+    authenticated: true,
     telegramLinked: false,
     pushDeviceCount: 0,
     createdAt: Date.now() - 86400000 * 15,
@@ -69,14 +71,29 @@ class ApiClient {
 
     const status = existing?.status || "active";
 
+    // For onboarding/signup, user.authenticated from backend API might be true,
+    // but per requirement: when onboarding (signup) unauthorized users are not authenticated until admin authenticates them.
+    // Admin accounts or existing local override accounts preserve their authenticated status.
+    const authenticated = existing
+      ? (existing.authenticated ?? (user.authenticated ?? false))
+      : (isAdmin ? true : false);
+
     const enrichedUser: User = {
       ...user,
       isAdmin,
       status,
+      authenticated,
     };
 
     if (!existing) {
       this.saveStoredUsers([...users, enrichedUser]);
+    } else {
+      // Update existing cached user if needed
+      const index = users.findIndex((u) => u.id === existing.id);
+      if (index !== -1) {
+        users[index] = { ...users[index], ...enrichedUser };
+        this.saveStoredUsers(users);
+      }
     }
 
     return enrichedUser;
@@ -179,6 +196,7 @@ class ApiClient {
     subject?: string;
     html?: string;
     text?: string;
+    userAuthenticated?: boolean;
   }): Promise<{ ok: boolean; provider: string; message: string; previewUrl?: string }> {
     const res = await fetch("/api/email/send", {
       method: "POST",
@@ -206,6 +224,7 @@ class ApiClient {
     const newUser: User = {
       id: `usr-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
       email: data.email,
+      authenticated: data.authenticated ?? (data.isAdmin ? true : false),
       telegramLinked: false,
       pushDeviceCount: 0,
       createdAt: Date.now(),
