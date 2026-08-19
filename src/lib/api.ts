@@ -8,95 +8,31 @@ import type {
   UpdateUserRequest,
 } from "@/types/api";
 
-const API_BASE_URL =
+const rawUrl =
   process.env.NEXT_PUBLIC_API_URL ||
   "https://nepse-unified-api.pokhrelsumit36.workers.dev";
 
-const INITIAL_USERS: User[] = [
-  {
-    id: "admin-user-001",
-    email: "admin@nepse.com",
-    authenticated: true,
-    telegramLinked: true,
-    pushDeviceCount: 1,
-    createdAt: Date.now() - 86400000 * 30,
-    isAdmin: true,
-    status: "active",
-  },
-  {
-    id: "demo-user-002",
-    email: "investor@nepse.com",
-    authenticated: true,
-    telegramLinked: false,
-    pushDeviceCount: 0,
-    createdAt: Date.now() - 86400000 * 15,
-    isAdmin: false,
-    status: "active",
-  },
-];
+// Remove trailing slash to prevent double-slash 404 errors
+const API_BASE_URL = rawUrl.replace(/\/+$/, "");
 
 class ApiClient {
   private token: string | null = null;
 
+  constructor() {
+    if (typeof window !== "undefined") {
+      this.token = localStorage.getItem("auth_token");
+    }
+  }
+
   setToken(token: string | null) {
     this.token = token;
-  }
-
-  private getStoredUsers(): User[] {
-    if (typeof window === "undefined") return INITIAL_USERS;
-    const stored = localStorage.getItem("nepse_admin_users");
-    if (!stored) {
-      localStorage.setItem("nepse_admin_users", JSON.stringify(INITIAL_USERS));
-      return INITIAL_USERS;
-    }
-    try {
-      return JSON.parse(stored);
-    } catch {
-      return INITIAL_USERS;
-    }
-  }
-
-  private saveStoredUsers(users: User[]): void {
-    if (typeof window === "undefined") return;
-    localStorage.setItem("nepse_admin_users", JSON.stringify(users));
-  }
-
-  private enrichUser(user: User): User {
-    const users = this.getStoredUsers();
-    const existing = users.find((u) => u.id === user.id || u.email.toLowerCase() === user.email.toLowerCase());
-
-    const isAdmin = existing
-      ? existing.isAdmin ?? false
-      : user.email.toLowerCase().includes("admin");
-
-    const status = existing?.status || "active";
-
-    // For onboarding/signup, user.authenticated from backend API might be true,
-    // but per requirement: when onboarding (signup) unauthorized users are not authenticated until admin authenticates them.
-    // Admin accounts or existing local override accounts preserve their authenticated status.
-    const authenticated = existing
-      ? (existing.authenticated ?? (user.authenticated ?? false))
-      : (isAdmin ? true : false);
-
-    const enrichedUser: User = {
-      ...user,
-      isAdmin,
-      status,
-      authenticated,
-    };
-
-    if (!existing) {
-      this.saveStoredUsers([...users, enrichedUser]);
-    } else {
-      // Update existing cached user if needed
-      const index = users.findIndex((u) => u.id === existing.id);
-      if (index !== -1) {
-        users[index] = { ...users[index], ...enrichedUser };
-        this.saveStoredUsers(users);
+    if (typeof window !== "undefined") {
+      if (token) {
+        localStorage.setItem("auth_token", token);
+      } else {
+        localStorage.removeItem("auth_token");
       }
     }
-
-    return enrichedUser;
   }
 
   private async request<T>(
@@ -124,30 +60,37 @@ class ApiClient {
       const message = data?.error?.message || "An error occurred";
 
       if (response.status === 401) {
-        this.token = null;
-
-        if (typeof window !== "undefined") {
-          localStorage.removeItem("auth_token");
-        }
+        this.setToken(null);
       }
 
       throw new Error(message);
     }
 
-    if (data && typeof data === "object" && "ok" in data && "data" in data && data.ok) {
+    if (
+      data &&
+      typeof data === "object" &&
+      "ok" in data &&
+      "data" in data &&
+      data.ok
+    ) {
       return data.data as T;
     }
 
     return data as T;
   }
 
+  // =========================================================================
+  // AUTH
+  // =========================================================================
   async signup(email: string, password: string): Promise<AuthResponse> {
     const res = await this.request<AuthResponse>("/api/v1/auth/signup", {
       method: "POST",
       body: JSON.stringify({ email, password }),
     });
 
-    res.user = this.enrichUser(res.user);
+    if (res.token) {
+      this.setToken(res.token);
+    }
     return res;
   }
 
@@ -157,15 +100,19 @@ class ApiClient {
       body: JSON.stringify({ email, password }),
     });
 
-    res.user = this.enrichUser(res.user);
+    if (res.token) {
+      this.setToken(res.token);
+    }
     return res;
   }
 
   async getMe(): Promise<User> {
-    const user = await this.request<User>("/api/v1/auth/me");
-    return this.enrichUser(user);
+    return this.request<User>("/api/v1/auth/me");
   }
 
+  // =========================================================================
+  // PORTFOLIO
+  // =========================================================================
   async getPortfolio(): Promise<PortfolioResponse> {
     return this.request<PortfolioResponse>("/api/v1/portfolio");
   }
@@ -187,6 +134,9 @@ class ApiClient {
     });
   }
 
+  // =========================================================================
+  // SYSTEM & EMAIL
+  // =========================================================================
   async getHealth(): Promise<HealthResponse> {
     return this.request<HealthResponse>("/api/health");
   }
@@ -197,67 +147,53 @@ class ApiClient {
     html?: string;
     text?: string;
     userAuthenticated?: boolean;
-  }): Promise<{ ok: boolean; provider: string; message: string; previewUrl?: string }> {
-    const res = await fetch("/api/email/send", {
+  }): Promise<{
+    ok: boolean;
+    provider: string;
+    message: string;
+    previewUrl?: string;
+  }> {
+    return this.request<{
+      ok: boolean;
+      provider: string;
+      message: string;
+      previewUrl?: string;
+    }>("/api/v1/email/send", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
-    const result = await res.json().catch(() => ({}));
-    if (!res.ok || !result.ok) {
-      throw new Error(result.error || "Failed to send email");
-    }
-    return result;
   }
 
-  // Admin User Management
+  // =========================================================================
+  // REAL ADMIN DATABASE MANAGEMENT (Fetches from Cloudflare KV Backend)
+  // =========================================================================
   async getUsers(): Promise<User[]> {
-    return this.getStoredUsers();
+    return this.request<User[]>("/api/v1/admin/users");
   }
 
   async createUser(data: CreateUserRequest): Promise<User> {
-    const users = this.getStoredUsers();
-    if (users.some((u) => u.email.toLowerCase() === data.email.toLowerCase())) {
-      throw new Error("User with this email already exists");
-    }
-
-    const newUser: User = {
-      id: `usr-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
-      email: data.email,
-      authenticated: data.authenticated ?? (data.isAdmin ? true : false),
-      telegramLinked: false,
-      pushDeviceCount: 0,
-      createdAt: Date.now(),
-      isAdmin: data.isAdmin ?? false,
-      status: "active",
-    };
-
-    const updated = [newUser, ...users];
-    this.saveStoredUsers(updated);
-    return newUser;
+    const res = await this.request<{ user: User }>("/api/v1/auth/signup", {
+      method: "POST",
+      body: JSON.stringify({
+        email: data.email,
+        password: "TemporaryPassword123!",
+        isAdmin: data.isAdmin,
+      }),
+    });
+    return res.user;
   }
 
   async updateUser(id: string, data: UpdateUserRequest): Promise<User> {
-    const users = this.getStoredUsers();
-    const index = users.findIndex((u) => u.id === id);
-    if (index === -1) {
-      throw new Error("User not found");
-    }
-
-    const updatedUser: User = {
-      ...users[index],
-      ...data,
-    };
-
-    users[index] = updatedUser;
-    this.saveStoredUsers(users);
-    return updatedUser;
+    return this.request<User>(`/api/v1/admin/users/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    });
   }
 
   async deleteUser(id: string): Promise<void> {
-    const users = this.getStoredUsers();
-    const filtered = users.filter((u) => u.id !== id);
-    this.saveStoredUsers(filtered);
+    return this.request<void>(`/api/v1/admin/users/${id}`, {
+      method: "DELETE",
+    });
   }
 }
 
