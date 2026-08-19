@@ -234,10 +234,9 @@ export default function NotificationsPage() {
               <Switch
                 id="emailEnabled"
                 checked={!!settings.emailEnabled}
-                onCheckedChange={(checked) =>
-                  handleToggleChange("emailEnabled", checked)
+                onChange={(e) =>
+                  handleToggleChange("emailEnabled", e.target.checked)
                 }
-                onChange={(e) => handleToggleChange("emailEnabled", e)}
               />
             </div>
 
@@ -375,10 +374,9 @@ export default function NotificationsPage() {
               <Switch
                 id="buyAlerts"
                 checked={!!settings.buyAlerts}
-                onCheckedChange={(checked) =>
-                  handleToggleChange("buyAlerts", checked)
+                onChange={(e) =>
+                  handleToggleChange("buyAlerts", e.target.checked)
                 }
-                onChange={(e) => handleToggleChange("buyAlerts", e)}
               />
             </div>
 
@@ -404,12 +402,11 @@ export default function NotificationsPage() {
               </div>
 
               <Switch
-                id="sellAlerts"
-                checked={!!settings.sellAlerts}
-                onCheckedChange={(checked) =>
-                  handleToggleChange("sellAlerts", checked)
+                id="buyAlerts"
+                checked={!!settings.buyAlerts}
+                onChange={(e) =>
+                  handleToggleChange("buyAlerts", e.target.checked)
                 }
-                onChange={(e) => handleToggleChange("sellAlerts", e)}
               />
             </div>
 
@@ -435,12 +432,11 @@ export default function NotificationsPage() {
               </div>
 
               <Switch
-                id="athAlerts"
-                checked={!!settings.athAlerts}
-                onCheckedChange={(checked) =>
-                  handleToggleChange("athAlerts", checked)
+                id="buyAlerts"
+                checked={!!settings.buyAlerts}
+                onChange={(e) =>
+                  handleToggleChange("buyAlerts", e.target.checked)
                 }
-                onChange={(e) => handleToggleChange("athAlerts", e)}
               />
             </div>
           </CardContent>
