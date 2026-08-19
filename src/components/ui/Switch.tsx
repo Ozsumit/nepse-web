@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { forwardRef, InputHTMLAttributes } from 'react';
-import { cn } from '@/lib/utils';
+import { forwardRef, InputHTMLAttributes, useId } from "react";
+import { cn } from "@/lib/utils";
 
 interface SwitchProps extends InputHTMLAttributes<HTMLInputElement> {
   label?: string;
@@ -9,32 +9,59 @@ interface SwitchProps extends InputHTMLAttributes<HTMLInputElement> {
 
 export const Switch = forwardRef<HTMLInputElement, SwitchProps>(
   ({ className, label, id, ...props }, ref) => {
-    const switchId = id || label?.toLowerCase().replace(/\s+/g, '-');
+    const generatedId = useId();
+    const switchId = id || generatedId;
 
     return (
-      <div className="flex items-center space-x-3">
+      <label
+        htmlFor={switchId}
+        className="inline-flex items-center gap-3 cursor-pointer select-none"
+      >
         <div className="relative">
           <input
-            type="checkbox"
             ref={ref}
             id={switchId}
-            className={cn(
-              'peer h-6 w-6 shrink-0 cursor-pointer appearance-none rounded-full border-2 border-gray-300 bg-white transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-white dark:border-neutral-600 dark:bg-neutral-800 dark:focus:ring-offset-neutral-950',
-              'checked:border-primary-600 checked:bg-primary-600 checked:dark:border-primary-600 checked:dark:bg-primary-600',
-              'after:content-[""] after:absolute after:top-[2px] after:left-[2px] after:h-4 after:w-4 after:rounded-full after:bg-white after:transition-transform after:shadow-sm peer-checked:after:translate-x-full',
-              className
-            )}
+            type="checkbox"
+            className="peer sr-only"
             {...props}
           />
+
+          {/* Track */}
+          <div
+            className={cn(
+              "h-7 w-12 rounded-full",
+              "bg-gray-300 dark:bg-neutral-700",
+              "transition-colors duration-200",
+              "peer-checked:bg-primary-600",
+              "peer-focus-visible:ring-2",
+              "peer-focus-visible:ring-primary-500",
+              "peer-focus-visible:ring-offset-2",
+              "peer-focus-visible:ring-offset-white",
+              "dark:peer-focus-visible:ring-offset-neutral-950",
+              className,
+            )}
+          />
+
+          {/* Thumb */}
+          <div
+            className={cn(
+              "absolute left-1 top-1",
+              "h-5 w-5 rounded-full",
+              "bg-white shadow-sm",
+              "transition-transform duration-200 ease-out",
+              "peer-checked:translate-x-5",
+            )}
+          />
         </div>
+
         {label && (
-          <label htmlFor={switchId} className="text-sm font-medium text-gray-900 dark:text-gray-100 cursor-pointer">
+          <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
             {label}
-          </label>
+          </span>
         )}
-      </div>
+      </label>
     );
-  }
+  },
 );
 
-Switch.displayName = 'Switch';
+Switch.displayName = "Switch";

@@ -27,7 +27,8 @@ const setAuthCookie = (token: string | null) => {
   if (token) {
     document.cookie = `auth_token=${token}; path=/; max-age=2592000; SameSite=Lax`;
   } else {
-    document.cookie = "auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+    document.cookie =
+      "auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
   }
 };
 
@@ -79,13 +80,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     api.setToken(data.token);
     setAuthCookie(data.token);
   };
-
-  const logout = () => {
+  const logout = async () => {
     setUser(null);
     setToken(null);
+
     localStorage.removeItem("auth_token");
     api.setToken(null);
-    setAuthCookie(null);
+
+    await setAuthCookie(null);
+
+    window.location.reload();
   };
 
   return (

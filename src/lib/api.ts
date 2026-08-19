@@ -57,7 +57,8 @@ class ApiClient {
     const data = await response.json().catch(() => ({}));
 
     if (!response.ok) {
-      const message = data?.error?.message || "An error occurred";
+      const message =
+        data?.error?.message || data?.message || "An error occurred";
 
       if (response.status === 401) {
         this.setToken(null);
@@ -66,6 +67,7 @@ class ApiClient {
       throw new Error(message);
     }
 
+    // Unwraps Hono's standard { ok: true, data: ... } response
     if (
       data &&
       typeof data === "object" &&
@@ -111,7 +113,7 @@ class ApiClient {
   }
 
   // =========================================================================
-  // PORTFOLIO
+  // PORTFOLIO & TARGETS
   // =========================================================================
   async getPortfolio(): Promise<PortfolioResponse> {
     return this.request<PortfolioResponse>("/api/v1/portfolio");
@@ -126,10 +128,21 @@ class ApiClient {
     });
   }
 
+  // POST /api/v1/portfolio handles target updates (upsert) in the backend
+  async updateStock(
+    symbol: string,
+    data: Partial<AddStockRequest>,
+  ): Promise<{ symbol: string; message: string }> {
+    return this.request("/api/v1/portfolio", {
+      method: "POST",
+      body: JSON.stringify({ symbol, ...data }),
+    });
+  }
+
   async removeStock(
     symbol: string,
   ): Promise<{ symbol: string; message: string }> {
-    return this.request(`/api/v1/portfolio/${symbol}`, {
+    return this.request(`/api/v1/portfolio/${encodeURIComponent(symbol)}`, {
       method: "DELETE",
     });
   }
@@ -165,7 +178,7 @@ class ApiClient {
   }
 
   // =========================================================================
-  // REAL ADMIN DATABASE MANAGEMENT (Fetches from Cloudflare KV Backend)
+  // ADMIN DATABASE MANAGEMENT
   // =========================================================================
   async getUsers(): Promise<User[]> {
     return this.request<User[]>("/api/v1/admin/users");
